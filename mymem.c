@@ -154,33 +154,42 @@ void *mymalloc(size_t requested)
 {
     assert((int)myStrategy > 0);
 
-    struct memoryList *CurrentNode = next;
+	switch (myStrategy){
+	  case NotSet: 
+	            return NULL;
+	  case First:
+	            return NULL;
+	  case Best:
+	            return NULL;
+	  case Worst:
+	            return NULL;
+	  case Next:
+	  struct memoryList *CurrentNode = next;
 
-    do{
-        if(next -> size >= requested && next -> alloc != 1){
-            insertNewNodeAfter(CurrentNode, requested, CurrentNode ->ptr, CurrentNode ->alloc);
-            CurrentNode -> size = requested;
-            CurrentNode -> alloc = 1;
+		do{
+			if(next -> size >= requested && next -> alloc != 1){
+				insertNewNodeAfter(CurrentNode, requested, CurrentNode ->ptr, CurrentNode ->alloc);
+				CurrentNode -> size = requested;
+				CurrentNode -> alloc = 1;
 
-            return CurrentNode -> ptr;
+				return CurrentNode -> ptr;
 
-        }else{
-
-			if((next -> next_node == NULL) && next != head){
-				tail = next;
-				next = head;
 			}else{
-				next = CurrentNode -> next_node;
+				if((next -> next_node == NULL) && next != head){
+					tail = next;
+					next = head;
+				}else{
+					next = CurrentNode -> next_node;
+				}
 			}
-            
-        }
 
-        CurrentNode -> next_node = CurrentNode;
+			CurrentNode -> next_node = CurrentNode;
 
-    }while (next -> next_node != currentNode);
+		}while (next -> next_node != NULL);
 
-
-    return CurrentNode -> ptr;
+		return CurrentNode -> ptr;
+	}
+    
 }
 
 
