@@ -203,7 +203,6 @@ void myfree(void* node)
     }
 
     return;
-    
 }
 
 
@@ -216,19 +215,57 @@ void myfree(void* node)
 /* Get the number of contiguous areas of free space in memory. */
 int mem_holes()
 {
-    return 0;
+    int freeAlloc = 0;
+
+    memoryList *trav = head;
+     
+    do{
+        if(trav -> alloc == 0){
+            freeAlloc++;
+        }
+
+        trav = trav -> next_node;
+
+    }while(trav -> next_node != NULL);
+
+    return freeAlloc;
 }
 
 /* Get the number of bytes allocated */
 int mem_allocated()
 {
-    return 0;
+    int allocated = 0;
+
+    memoryList *trav = head;
+
+    do{
+        if(trav -> alloc == 1){
+            allocated++;
+        }
+
+        trav = trav -> next_node;
+
+    }while(trav -> next_node != NULL);
+
+    return allocated;
 }
 
 /* Number of non-allocated bytes */
 int mem_free()
 {
-    return 0;
+    int memoryNotAlloc = 0;
+
+    memoryList *trav = head;
+
+    do{
+        if(trav -> alloc == 0){
+            memoryNotAlloc += trav -> size;
+        }
+        
+        trav = trav -> next_node;
+
+    }while(trav -> next_node != NULL);
+    return memoryNotAlloc;
 }
 
 /* Number of bytes in the largest contiguous area of unallocated memory */
@@ -321,12 +358,16 @@ void print_memory()
 {
 	//TODO: Husk at ændre dette kopieret kode!!!
 
-	struct memoryList *trav;
-	for (trav = head; trav != NULL; trav=trav->next_node) { 
-		printf("%s->", (trav->alloc == 0) ? "Free" : "Alloced");
-	}
-	printf("\n");
-	return;
+    printf("Memory List {\n");
+    /* Iterate over memory list */
+    struct memoryList* index = head;
+    do {
+        printf("\tNode %p,\tsize %d,\t%s\n",
+            index->ptr,
+            index->size,
+            (index->alloc ? "[ALLOCATED]" : "[FREE]"));
+    } while((index = index->next_node) != NULL);
+    printf("}\n");
 }
 
 /* Use this function to track memory allocation performance.
