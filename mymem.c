@@ -10,7 +10,7 @@
  * You may change this to fit your implementation.
  */
 
-struct memoryList {
+typedef struct memoryList {
     // doubly-linked list
     struct memoryList *last_node;
     struct memoryList *next_node;
@@ -19,7 +19,7 @@ struct memoryList {
     char alloc;          // 1 if this block is allocated,
     // 0 if this block is free.
     void *ptr;           // location of block in memory pool.
-};
+} memoryList;
 
 strategies myStrategy = NotSet;    // Current strategy
 
@@ -27,9 +27,9 @@ strategies myStrategy = NotSet;    // Current strategy
 size_t mySize;
 void *myMemory = NULL;
 
-static struct memoryList *head;
-static struct memoryList *next;
-static struct memoryList *tail;
+static memoryList *head;
+static memoryList *next;
+static memoryList *tail;
 
 
 /* initmem must be called prior to mymalloc and myfree.
@@ -80,7 +80,7 @@ void initmem(strategies strategy, size_t sz)
 
     /* TODO: Initialize memory management structure. */
 
-    head = next;
+    next = head;
 
 }
 
@@ -92,67 +92,43 @@ void initmem(strategies strategy, size_t sz)
 
 
 /* Inspiration er tager fra geeks for geeks https://www.geeksforgeeks.org/doubly-linked-list/ */
-void insertNewNodeAfter(struct memoryList *givenNode, size_t givenSize, void *givenPtr, char givenAlloc){
+void insertNewNodeAfter(memoryList *trav, size_t travSize, void *travPtr, char travAlloc){
     
-    if(givenNode == NULL){
+    if(trav == NULL){
         return;
     }
-
+    
     /* Her bliver den nye node alloceret i vores hukommelse.  */
-    struct memoryList *node = (struct node*)malloc(sizeof(*node));
+    memoryList *newNode = malloc(sizeof(memoryList));
+
 
     /* Her sætter vi den nye nods parameter */
-    node -> size = givenNode -> size - givenSize;
-    node -> alloc = givenAlloc;
-    node -> ptr = &givenPtr + givenSize;
+    newNode -> size = trav -> size - travSize;
+    newNode -> alloc = travAlloc;
+    newNode -> ptr = travPtr + travSize;
 
     /* Her siger jeg at den nye next_node skal pege på den node som den forrige next_node pegede på.  */ 
-    node -> next_node = givenNode -> next_node;
+    newNode -> next_node = trav -> next_node;
 
     /* Her siger jeg så at den ny node skal pege på den forrige node gennem last node. */
-    node -> last_node = givenNode;
+    newNode -> last_node = trav;
 
     /* Her siger jeg så at den forriges nodes next_node skal nu pege på den nye node som lige er blevet lavet */ 
-    givenNode -> next_node = node;
+    trav -> next_node = newNode;
 
     /* Her siger jeg at den nye nodes next_node's last_node skal være lige med node. */
-    node -> next_node -> last_node = node;
+    trav -> next_node -> last_node = newNode;
 
-    /* Dette if statment sætter vores currentNode/givenNode til at være lig med den node som vi lavede vores ny node ud fra, så vi kan begynde
+    /* Dette if statment sætter vores currentNode/trav til at være lig med den node som vi lavede vores ny node ud fra, så vi kan begynde
     derfra igen næste gang. */
-
-    next = node;
+    next = newNode;
 }
 
-/* For at slette en node er der blevet taget inspiration fra geeks for geeks https://www.geeksforgeeks.org/delete-a-node-in-a-doubly-linked-list/ */
-void deleteNode(struct memoryList *head, struct memoryList *delNode){
-    
-    /* Først bliver der lavet en base case*/
-    if(head == NULL || delNode == NULL){
-        return;
-    }
+void *mymalloc(size_t requested){
 
-    /* Herefter kigger vi på om det er head node der skal slettes */ 
-    if(head == delNode){
-        head = delNode -> next_node;
-    }
-
-    /* Her bliver der en node slettet hvis den næste node ikker er NULL */
-    if(delNode -> next_node != NULL){
-        delNode -> next_node -> last_node = delNode -> last_node;
-    } 
-
-    /* Her bliver der en node slettet hvis den tidligere node ikke er NULL */
-    if(delNode -> last_node != NULL){
-        delNode -> last_node -> next_node = delNode -> next_node;
-    }
-
-    free(delNode);
-}
-
-void *mymalloc(size_t requested)
-{
     assert((int)myStrategy > 0);
+
+    memoryList *trav = next;
 
 	switch (myStrategy){
 	  case NotSet: 
@@ -164,32 +140,26 @@ void *mymalloc(size_t requested)
 	  case Worst:
 	            return NULL;
 	  case Next:
-	  struct memoryList *CurrentNode = next;
+            do{
+                if(next -> size >= requested && next -> alloc != 1){
+                    insertNewNodeAfter(trav, requested, trav ->ptr, trav ->alloc);
+                    trav -> size = requested;
+                    trav -> alloc = 1;
 
-		do{
-			if(next -> size >= requested && next -> alloc != 1){
-				insertNewNodeAfter(CurrentNode, requested, CurrentNode ->ptr, CurrentNode ->alloc);
-				CurrentNode -> size = requested;
-				CurrentNode -> alloc = 1;
+                }else{
+                    puts("hej");
+                    if((next -> next_node == NULL) && next != head){
+                        tail = next;
+                        next = head;
+                    }
+                }
 
-				return CurrentNode -> ptr;
+                next = next -> next_node;
 
-			}else{
-				if((next -> next_node == NULL) && next != head){
-					tail = next;
-					next = head;
-				}else{
-					next = CurrentNode -> next_node;
-				}
-			}
+            }while (next -> next_node != NULL);
+    }
 
-			CurrentNode -> next_node = CurrentNode;
-
-		}while (next -> next_node != NULL);
-
-		return CurrentNode -> ptr;
-	}
-    
+    return trav -> ptr;
 }
 
 
@@ -197,16 +167,48 @@ void *mymalloc(size_t requested)
 /*  */ 
 void myfree(void* node)
 {
-    struct memoryList *temp = head;
+    memoryList *trav = head;
 
-    while(temp->ptr == node) {
+    do{
+        if(trav -> ptr == node){
+            trav -> alloc = 0;
+            break;
+        }
+
+        trav = trav -> next_node;
+
+    }while(trav != NULL);
+    
+    if((trav -> last_node != NULL) && (trav -> last_node -> alloc == 0)){
+        trav -> size += trav -> last_node -> size;
+        trav -> ptr = trav -> last_node -> ptr;
+        trav -> last_node -> last_node -> next_node = trav;
+
+        memoryList *temp = trav -> last_node -> last_node;
+        free(trav -> last_node);
+        trav -> last_node = temp;
+    }
+
+    if((trav -> next_node != NULL) && (trav -> next_node -> alloc == 0)){
+        trav -> size += trav -> next_node -> size;
+        trav -> ptr = trav -> next_node -> ptr;
+        trav -> next_node -> next_node -> last_node = trav;
+
+        memoryList *temp = trav -> next_node ->next_node;
+        free(trav -> next_node);
+        trav -> next_node = temp;
+    }
+
+    return;
+    
+    /*while(temp->ptr == node) {
         
         temp->alloc = 0;
 
-            /* Her kigger vi på om den node som vi vil frigøre's nabo's alloc også er lig med 0. Hvis den er skal de 2 nodes ligges sammen.  */
+           
         if ((temp->last_node != NULL) && (temp->last_node->alloc == 0)) {
             temp->last_node->size += temp->size;
-            /* Siden temp -> last nu skal fjernes skal dens next pointer sættes til at være tmp -> next */
+            
             deleteNode(head,temp);
 			break;
 
@@ -216,10 +218,10 @@ void myfree(void* node)
         } else {
             break;
         }
-	}
+	}*/
     
 
-    while (temp -> ptr == node){
+    /*while (temp -> ptr == node){
         
         temp -> alloc = 0;
 
@@ -235,7 +237,7 @@ void myfree(void* node)
         } else {
             break;
         }
-	}
+	}*/
 }
 
 
@@ -352,17 +354,13 @@ strategies strategyFromString(char * strategy)
 void print_memory()
 {
 	//TODO: Husk at ændre dette kopieret kode!!!
-	printf("Memory List {\n");
-  /* Iterate over memory list */
-  struct memoryList* index = head;
-  do {
-    printf("\tBlock %p,\tsize %d,\t%s\n",
-           index->ptr,
-           index->size,
-           (index->alloc ? "[ALLOCATED]" : "[FREE]"));
-  } while((index = index->next) != head);
-  printf("}\n");
-    return;
+
+	struct memoryList *trav;
+	for (trav = head; trav != NULL; trav=trav->next_node) { 
+		printf("%s->", (trav->alloc == 0) ? "Free" : "Alloced");
+	}
+	printf("\n");
+	return;
 }
 
 /* Use this function to track memory allocation performance.
