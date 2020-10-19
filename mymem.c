@@ -140,25 +140,28 @@ void *mymalloc(size_t requested){
 	  case Worst:
 	            return NULL;
 	  case Next:
+
             do{
-                if(next -> size >= requested && next -> alloc != 1){
-                    insertNewNodeAfter(trav, requested, trav ->ptr, trav ->alloc);
-                    trav -> size = requested;
-                    trav -> alloc = 1;
-
+                if(trav -> next_node != NULL){
+                    trav = trav -> next_node;
                 }else{
-                    puts("hej");
-                    if((next -> next_node == NULL) && next != head){
-                        tail = next;
-                        next = head;
-                    }
+                    trav = head;
                 }
+                //puts("hej");
 
-                next = next -> next_node;
-
-            }while (next -> next_node != NULL);
+            }while (trav -> size < requested && trav -> alloc != 1);
+                
+            insertNewNodeAfter(trav, requested, trav ->ptr, trav ->alloc);
+            trav -> size = requested;
+            trav -> alloc = 1;
+                
+            if(trav -> next_node != NULL){
+                next = trav -> next_node;
+            }else{
+                next = head;
+            }
+            //next = next -> next_node;
     }
-
     return trav -> ptr;
 }
 
@@ -201,43 +204,6 @@ void myfree(void* node)
 
     return;
     
-    /*while(temp->ptr == node) {
-        
-        temp->alloc = 0;
-
-           
-        if ((temp->last_node != NULL) && (temp->last_node->alloc == 0)) {
-            temp->last_node->size += temp->size;
-            
-            deleteNode(head,temp);
-			break;
-
-        } else if (temp->next_node != NULL) {
-            temp = temp->next_node;
-
-        } else {
-            break;
-        }
-	}*/
-    
-
-    /*while (temp -> ptr == node){
-        
-        temp -> alloc = 0;
-
-        if((temp -> next_node != NULL) && (temp -> next_node -> alloc = 0)){
-            temp -> next_node -> size += temp -> size;
-
-            deleteNode(head,temp);
-			break;
-        }
-        else if(temp -> last_node != NULL){
-            temp = temp -> last_node;
-
-        } else {
-            break;
-        }
-	}*/
 }
 
 
