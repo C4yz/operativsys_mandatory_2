@@ -147,7 +147,6 @@ void *mymalloc(size_t requested){
                 }else{
                     trav = head;
                 }
-                //puts("hej");
 
             }while (trav -> size < requested && trav -> alloc != 1);
                 
@@ -360,13 +359,14 @@ void print_memory()
 
     printf("Memory List {\n");
     /* Iterate over memory list */
-    struct memoryList* index = head;
+    struct memoryList* trav = head;
     do {
         printf("\tNode %p,\tsize %d,\t%s\n",
-            index->ptr,
-            index->size,
-            (index->alloc ? "[ALLOCATED]" : "[FREE]"));
-    } while((index = index->next_node) != NULL);
+            trav->ptr,
+            trav->size,
+            (trav->alloc ? "[ALLOCATED]" : "[FREE]"));
+            trav = trav -> next_node;
+    } while((trav) != NULL);
     printf("}\n");
 }
 
