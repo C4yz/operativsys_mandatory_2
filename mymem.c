@@ -115,13 +115,9 @@ void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr){
     /* Her siger jeg så at den forriges nodes next_node skal nu pege på den nye node som lige er blevet lavet */ 
     trav -> next_node = newNode;
 
-    if(trav -> next_node != NULL){
-        /* Her siger jeg at den nye nodes next_node's last_node skal være lige med node. */
-        trav -> next_node -> last_node = newNode;
-    }
-
     /* Dette if statment sætter vores currentNode/trav til at være lig med den node som vi lavede vores ny node ud fra, så vi kan begynde
     derfra igen næste gang. */
+
     next = newNode;
 }
 
@@ -149,21 +145,22 @@ void *mymalloc(size_t requested){
                     trav = head;
                 }
 
-            }while (trav -> size < requested && trav -> alloc != 1);
+                if(trav -> size > requested && trav -> alloc != 1){
+                    insertNewNodeAfter(trav, requested, trav -> ptr);
+                    trav -> size = requested;
+                    trav -> alloc = 1;
+                    break;
+                }
                 
-            insertNewNodeAfter(trav, requested, trav -> ptr);
-            trav -> size = requested;
-            trav -> alloc = 1;
+                if(trav -> next_node != NULL){
+                    next = trav -> next_node;
+                }else{
+                    tail = trav;
+                    next = head;
+                }
 
-            puts("hej");
+            }while (trav != NULL);
                 
-            if(trav -> next_node != NULL){
-                next = trav -> next_node;
-            }else{
-                next = head;
-            }
-            //next = next -> next_node;
-
             return trav -> ptr;
     }
 }
@@ -181,7 +178,7 @@ memoryList* mergeNodes(memoryList* lastNode, memoryList* nextNode){
 
     if(nextNode == next && nextNode -> next_node != NULL){
         next = nextNode -> next_node;
-    }else{
+    }else if(nextNode == next && nextNode == tail){
         next = head;
     }
 
@@ -194,8 +191,6 @@ memoryList* mergeNodes(memoryList* lastNode, memoryList* nextNode){
 void myfree(void* node){
     memoryList *trav = head;
 
-    puts("free");
-
     do{
         if(trav -> ptr == node){
             trav -> alloc = 0;
@@ -205,12 +200,6 @@ void myfree(void* node){
         trav = trav -> next_node;
 
     }while(trav != NULL);
-
-    /*if(trav == head){
-        head = trav -> next_node;
-
-        free(trav);
-    }*/
     
     if((trav -> last_node != NULL) && (trav -> last_node -> alloc == 0)){
         trav = mergeNodes(trav -> last_node, trav);
@@ -243,7 +232,7 @@ int mem_holes(){
 
         trav = trav -> next_node;
 
-    }while(trav -> next_node != NULL);
+    }while(trav != NULL);
 
     return freeAlloc;
 }
@@ -261,7 +250,7 @@ int mem_allocated(){
 
         trav = trav -> next_node;
 
-    }while(trav -> next_node != NULL);
+    }while(trav != NULL);
 
     return allocated;
 }
@@ -279,21 +268,62 @@ int mem_free(){
         
         trav = trav -> next_node;
 
-    }while(trav -> next_node != NULL);
+    }while(trav != NULL);
     return memoryNotAlloc;
 }
 
 /* Number of bytes in the largest contiguous area of unallocated memory */
 int mem_largest_free(){
-    return 0;
+    int largestNotAlloc = 0;
+
+    memoryList *trav = head;
+
+    do{
+        if(trav -> alloc == 0 && trav -> size > largestNotAlloc){
+            largestNotAlloc = trav -> size;
+        }
+
+        trav = trav -> next_node;
+
+    }while(trav != NULL);
+
+    return largestNotAlloc;
 }
 
 /* Number of free blocks smaller than "size" bytes. */
 int mem_small_free(int size){
-    return 0;
+    int numOfSmallFreeNodes = 0;
+
+    memoryList *trav = head;
+
+    do{
+        if(trav -> alloc == 0 && trav -> size <= size){
+            numOfSmallFreeNodes++;
+        }
+
+        trav = trav -> next_node;
+
+    }while(trav != NULL);
+
+    return numOfSmallFreeNodes;
 }
 
 char mem_is_alloc(void *ptr){
+
+    memoryList * trav = head;
+
+    do{
+        if(trav -> ptr == ptr){
+            if(trav -> alloc == 1){
+                return 1;
+            }
+            else{
+                return 0;
+            }
+        }
+
+    }while(trav != NULL);
+    
     return 0;
 }
 
@@ -423,5 +453,4 @@ void try_mymem(int argc, char **argv) {
 
     print_memory();
     print_memory_status();
-
 }
