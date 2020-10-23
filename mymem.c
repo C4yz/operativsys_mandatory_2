@@ -91,7 +91,7 @@ void initmem(strategies strategy, size_t sz){
 
 
 /* Inspiration er tager fra geeks for geeks https://www.geeksforgeeks.org/doubly-linked-list/ */
-void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr, char travAlloc){
+void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr){
     
     if(trav == NULL){
         return;
@@ -103,7 +103,7 @@ void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr, char 
 
     /* Her sætter vi den nye nods parameter */
     newNode -> size = trav -> size - requested;
-    newNode -> alloc = travAlloc;
+    newNode -> alloc = 0;
     newNode -> ptr = travPtr + requested;
 
     /* Her siger jeg at den nye next_node skal pege på den node som den forrige next_node pegede på.  */ 
@@ -151,9 +151,11 @@ void *mymalloc(size_t requested){
 
             }while (trav -> size < requested && trav -> alloc != 1);
                 
-            insertNewNodeAfter(trav, requested, trav ->ptr, trav ->alloc);
+            insertNewNodeAfter(trav, requested, trav -> ptr);
             trav -> size = requested;
             trav -> alloc = 1;
+
+            puts("hej");
                 
             if(trav -> next_node != NULL){
                 next = trav -> next_node;
@@ -161,8 +163,9 @@ void *mymalloc(size_t requested){
                 next = head;
             }
             //next = next -> next_node;
+
+            return trav -> ptr;
     }
-    return trav -> ptr;
 }
 
 memoryList* mergeNodes(memoryList* lastNode, memoryList* nextNode){
@@ -176,13 +179,22 @@ memoryList* mergeNodes(memoryList* lastNode, memoryList* nextNode){
         nextNode -> next_node -> last_node = lastNode;
     }
 
+    if(nextNode == next && nextNode -> next_node != NULL){
+        next = nextNode -> next_node;
+    }else{
+        next = head;
+    }
+
     free(nextNode);
     return lastNode;
 }
+
 /* Frees a block of memory previously allocated by mymalloc. */
 /*  */ 
 void myfree(void* node){
     memoryList *trav = head;
+
+    puts("free");
 
     do{
         if(trav -> ptr == node){
@@ -193,6 +205,12 @@ void myfree(void* node){
         trav = trav -> next_node;
 
     }while(trav != NULL);
+
+    /*if(trav == head){
+        head = trav -> next_node;
+
+        free(trav);
+    }*/
     
     if((trav -> last_node != NULL) && (trav -> last_node -> alloc == 0)){
         trav = mergeNodes(trav -> last_node, trav);
@@ -390,11 +408,17 @@ void try_mymem(int argc, char **argv) {
     initmem(strat,500);
 
     a = mymalloc(100);
+    print_memory();
     b = mymalloc(100);
+    print_memory();
     c = mymalloc(100);
+    print_memory();
     myfree(b);
+    print_memory();
     d = mymalloc(50);
+    print_memory();
     myfree(a);
+    print_memory();
     e = mymalloc(25);
 
     print_memory();
