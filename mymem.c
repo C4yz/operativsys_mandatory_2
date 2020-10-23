@@ -46,8 +46,7 @@ static memoryList *tail;
    sz specifies the number of bytes that will be available, in total, for all mymalloc requests.
 */
 
-void initmem(strategies strategy, size_t sz)
-{
+void initmem(strategies strategy, size_t sz){
     myStrategy = strategy;
 
     /* all implementations will need an actual block of memory to use */
@@ -92,7 +91,7 @@ void initmem(strategies strategy, size_t sz)
 
 
 /* Inspiration er tager fra geeks for geeks https://www.geeksforgeeks.org/doubly-linked-list/ */
-void insertNewNodeAfter(memoryList *trav, size_t travSize, void *travPtr, char travAlloc){
+void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr, char travAlloc){
     
     if(trav == NULL){
         return;
@@ -103,9 +102,9 @@ void insertNewNodeAfter(memoryList *trav, size_t travSize, void *travPtr, char t
 
 
     /* Her sætter vi den nye nods parameter */
-    newNode -> size = trav -> size - travSize;
+    newNode -> size = trav -> size - requested;
     newNode -> alloc = travAlloc;
-    newNode -> ptr = travPtr + travSize;
+    newNode -> ptr = travPtr + requested;
 
     /* Her siger jeg at den nye next_node skal pege på den node som den forrige next_node pegede på.  */ 
     newNode -> next_node = trav -> next_node;
@@ -116,8 +115,10 @@ void insertNewNodeAfter(memoryList *trav, size_t travSize, void *travPtr, char t
     /* Her siger jeg så at den forriges nodes next_node skal nu pege på den nye node som lige er blevet lavet */ 
     trav -> next_node = newNode;
 
-    /* Her siger jeg at den nye nodes next_node's last_node skal være lige med node. */
-    trav -> next_node -> last_node = newNode;
+    if(trav -> next_node != NULL){
+        /* Her siger jeg at den nye nodes next_node's last_node skal være lige med node. */
+        trav -> next_node -> last_node = newNode;
+    }
 
     /* Dette if statment sætter vores currentNode/trav til at være lig med den node som vi lavede vores ny node ud fra, så vi kan begynde
     derfra igen næste gang. */
@@ -164,11 +165,23 @@ void *mymalloc(size_t requested){
     return trav -> ptr;
 }
 
+memoryList* mergeNodes(memoryList* lastNode, memoryList* nextNode){
 
+    lastNode -> next_node = nextNode -> next_node;
+    lastNode -> size = lastNode -> size + nextNode -> size;
+    lastNode -> alloc = 0;
+    lastNode -> ptr = nextNode -> ptr;
+
+    if(nextNode -> next_node != NULL){
+        nextNode -> next_node -> last_node = lastNode;
+    }
+
+    free(nextNode);
+    return lastNode;
+}
 /* Frees a block of memory previously allocated by mymalloc. */
 /*  */ 
-void myfree(void* node)
-{
+void myfree(void* node){
     memoryList *trav = head;
 
     do{
@@ -182,23 +195,11 @@ void myfree(void* node)
     }while(trav != NULL);
     
     if((trav -> last_node != NULL) && (trav -> last_node -> alloc == 0)){
-        trav -> size += trav -> last_node -> size;
-        trav -> ptr = trav -> last_node -> ptr;
-        trav -> last_node -> last_node -> next_node = trav;
-
-        memoryList *temp = trav -> last_node -> last_node;
-        free(trav -> last_node);
-        trav -> last_node = temp;
+        trav = mergeNodes(trav -> last_node, trav);
     }
 
     if((trav -> next_node != NULL) && (trav -> next_node -> alloc == 0)){
-        trav -> size += trav -> next_node -> size;
-        trav -> ptr = trav -> next_node -> ptr;
-        trav -> next_node -> next_node -> last_node = trav;
-
-        memoryList *temp = trav -> next_node ->next_node;
-        free(trav -> next_node);
-        trav -> next_node = temp;
+        trav = mergeNodes(trav, trav -> next_node);
     }
 
     return;
@@ -212,8 +213,7 @@ void myfree(void* node)
  */
 
 /* Get the number of contiguous areas of free space in memory. */
-int mem_holes()
-{
+int mem_holes(){
     int freeAlloc = 0;
 
     memoryList *trav = head;
@@ -231,8 +231,7 @@ int mem_holes()
 }
 
 /* Get the number of bytes allocated */
-int mem_allocated()
-{
+int mem_allocated(){
     int allocated = 0;
 
     memoryList *trav = head;
@@ -250,8 +249,7 @@ int mem_allocated()
 }
 
 /* Number of non-allocated bytes */
-int mem_free()
-{
+int mem_free(){
     int memoryNotAlloc = 0;
 
     memoryList *trav = head;
@@ -268,19 +266,16 @@ int mem_free()
 }
 
 /* Number of bytes in the largest contiguous area of unallocated memory */
-int mem_largest_free()
-{
+int mem_largest_free(){
     return 0;
 }
 
 /* Number of free blocks smaller than "size" bytes. */
-int mem_small_free(int size)
-{
+int mem_small_free(int size){
     return 0;
 }
 
-char mem_is_alloc(void *ptr)
-{
+char mem_is_alloc(void *ptr){
     return 0;
 }
 
@@ -291,21 +286,18 @@ char mem_is_alloc(void *ptr)
 
 
 //Returns a pointer to the memory pool.
-void *mem_pool()
-{
+void *mem_pool(){
     return myMemory;
 }
 
 // Returns the total number of bytes in the memory pool. */
-int mem_total()
-{
+int mem_total(){
     return mySize;
 }
 
 
 // Get string name for a strategy.
-char *strategy_name(strategies strategy)
-{
+char *strategy_name(strategies strategy){
     switch (strategy)
     {
         case Best:
@@ -322,8 +314,7 @@ char *strategy_name(strategies strategy)
 }
 
 // Get strategy from name.
-strategies strategyFromString(char * strategy)
-{
+strategies strategyFromString(char * strategy){
     if (!strcmp(strategy,"best"))
     {
         return Best;
@@ -353,8 +344,7 @@ strategies strategyFromString(char * strategy)
  */
 
 /* Use this function to print out the current contents of memory. */
-void print_memory()
-{
+void print_memory(){
 	//TODO: Husk at ændre dette kopieret kode!!!
 
     printf("Memory List {\n");
@@ -374,8 +364,7 @@ void print_memory()
  * This function does not depend on your implementation,
  * but on the functions you wrote above.
  */
-void print_memory_status()
-{
+void print_memory_status(){
     printf("%d out of %d bytes allocated.\n",mem_allocated(),mem_total());
     printf("%d bytes are free in %d holes; maximum allocatable block is %d bytes.\n",mem_free(),mem_holes(),mem_largest_free());
     printf("Average hole size is %f.\n\n",((float)mem_free())/mem_holes());
