@@ -139,17 +139,12 @@ void *mymalloc(size_t requested){
 	  case Next:
 
             do{
-                if(trav -> next_node != NULL){
-                    trav = trav -> next_node;
-                }else{
-                    trav = head;
-                }
 
                 if(trav -> size > requested && trav -> alloc != 1){
                     insertNewNodeAfter(trav, requested, trav -> ptr);
                     trav -> size = requested;
                     trav -> alloc = 1;
-                    break;
+                    break;  
                 }
                 
                 if(trav -> next_node != NULL){
@@ -206,7 +201,7 @@ void myfree(void* node){
     }
 
     if((trav -> next_node != NULL) && (trav -> next_node -> alloc == 0)){
-        trav = mergeNodes(trav, trav -> next_node);
+        mergeNodes(trav, trav -> next_node);
     }
 
     return;
@@ -404,7 +399,7 @@ void print_memory(){
             trav->size,
             (trav->alloc ? "[ALLOCATED]" : "[FREE]"));
             trav = trav -> next_node;
-    } while((trav) != NULL);
+    } while(trav != NULL);
     printf("}\n");
 }
 
