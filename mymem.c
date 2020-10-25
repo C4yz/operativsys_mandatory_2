@@ -100,9 +100,6 @@ void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr){
     /* Her bliver den nye node alloceret i vores hukommelse.  */
     memoryList *newNode = malloc(sizeof(memoryList));
 
-    if(trav == head){
-        head = newNode;
-    }
 
     /* Her sætter vi den nye nods parameter */
     newNode -> size = trav -> size - requested;
@@ -147,9 +144,7 @@ void *mymalloc(size_t requested){
                     trav -> size = requested;
                     trav -> alloc = 1;
                     break;  
-                } 
-                
-                if(trav -> size == requested && trav -> alloc != 1){
+                } else if(trav -> size == requested && trav -> alloc != 1){
                     trav -> alloc = 1;
                     next = trav; 
                     break;
@@ -256,8 +251,6 @@ int mem_allocated(){
         trav = trav -> next_node;
 
     }while(trav != NULL);
-
-    printf("%i\n",allocated);
 
     return allocated;
 }

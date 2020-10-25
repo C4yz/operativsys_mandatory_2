@@ -173,6 +173,8 @@ int test_alloc_1(int argc, char **argv) {
 		for (i = 0; i < 100; i++)
 		{
 
+			printf("%i\n",i);
+
 			void* pointer = mymalloc(1);
 			if ( i > 0 && pointer != (lastPointer+1) )
 			{
