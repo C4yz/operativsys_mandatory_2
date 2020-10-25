@@ -100,6 +100,9 @@ void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr){
     /* Her bliver den nye node alloceret i vores hukommelse.  */
     memoryList *newNode = malloc(sizeof(memoryList));
 
+    if(trav == head){
+        head = newNode;
+    }
 
     /* Her sætter vi den nye nods parameter */
     newNode -> size = trav -> size - requested;
@@ -117,7 +120,6 @@ void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr){
 
     /* Dette if statment sætter vores currentNode/trav til at være lig med den node som vi lavede vores ny node ud fra, så vi kan begynde
     derfra igen næste gang. */
-
     next = newNode;
 }
 
@@ -145,6 +147,12 @@ void *mymalloc(size_t requested){
                     trav -> size = requested;
                     trav -> alloc = 1;
                     break;  
+                } 
+                
+                if(trav -> size == requested && trav -> alloc != 1){
+                    trav -> alloc = 1;
+                    next = trav; 
+                    break;
                 }
                 
                 if(trav -> next_node != NULL){
@@ -194,14 +202,14 @@ void myfree(void* node){
 
         trav = trav -> next_node;
 
-    }while(trav != NULL);
+    }while(trav != head);
     
     if((trav -> last_node != NULL) && (trav -> last_node -> alloc == 0)){
         trav = mergeNodes(trav -> last_node, trav);
     }
 
     if((trav -> next_node != NULL) && (trav -> next_node -> alloc == 0)){
-        mergeNodes(trav, trav -> next_node);
+        trav = mergeNodes(trav, trav -> next_node);
     }
 
     return;
@@ -216,10 +224,12 @@ void myfree(void* node){
 
 /* Get the number of contiguous areas of free space in memory. */
 int mem_holes(){
+
     int freeAlloc = 0;
 
     memoryList *trav = head;
-     
+    
+    
     do{
         if(trav -> alloc == 0){
             freeAlloc++;
@@ -240,12 +250,14 @@ int mem_allocated(){
 
     do{
         if(trav -> alloc == 1){
-            allocated++;
+            allocated += trav -> size;
         }
 
         trav = trav -> next_node;
 
     }while(trav != NULL);
+
+    printf("%i\n",allocated);
 
     return allocated;
 }
@@ -310,12 +322,11 @@ char mem_is_alloc(void *ptr){
     do{
         if(trav -> ptr == ptr){
             if(trav -> alloc == 1){
-                return 1;
-            }
-            else{
-                return 0;
+                return trav -> alloc;
             }
         }
+
+        trav = trav -> next_node;
 
     }while(trav != NULL);
     
@@ -433,17 +444,11 @@ void try_mymem(int argc, char **argv) {
     initmem(strat,500);
 
     a = mymalloc(100);
-    print_memory();
     b = mymalloc(100);
-    print_memory();
     c = mymalloc(100);
-    print_memory();
     myfree(b);
-    print_memory();
     d = mymalloc(50);
-    print_memory();
     myfree(a);
-    print_memory();
     e = mymalloc(25);
 
     print_memory();

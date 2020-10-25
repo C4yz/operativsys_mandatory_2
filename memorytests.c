@@ -172,6 +172,7 @@ int test_alloc_1(int argc, char **argv) {
 		initmem(strategy,100);
 		for (i = 0; i < 100; i++)
 		{
+
 			void* pointer = mymalloc(1);
 			if ( i > 0 && pointer != (lastPointer+1) )
 			{
