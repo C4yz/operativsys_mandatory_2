@@ -29,7 +29,6 @@ void *myMemory = NULL;
 
 static memoryList *head;
 static memoryList *next;
-static memoryList *tail;
 
 
 /* initmem must be called prior to mymalloc and myfree.
@@ -52,16 +51,26 @@ void initmem(strategies strategy, size_t sz){
     /* all implementations will need an actual block of memory to use */
     mySize = sz;
 
-    if (myMemory != NULL) free(myMemory); /* in case this is not the first time initmem2 is called */
+    if (myMemory != NULL){
+        free(myMemory);
+    }  /* in case this is not the first time initmem2 is called */
 
     /* TODO: release any other memory you were using for bookkeeping when doing a re-initialization! */
     if(head != NULL){
-        free(head);
+        memoryList* trav = head;
+
+        while (trav != NULL)
+        {
+            free(trav -> last_node);
+            trav = trav -> next_node;
+        }
+
+        free(trav);
     }
 
-    if(next != NULL){
+    /*if(next != NULL){
         free(next);
-    }
+    }*/
 
     myMemory = malloc(sz);
 
@@ -111,7 +120,7 @@ void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr){
         trav -> next_node = newNode;
         newNode -> last_node = trav;
         newNode -> next_node = NULL;
-        tail = newNode;
+        //tail = newNode;
     }
 
     /* Her sætter vi den nye nods parameter */
@@ -122,12 +131,12 @@ void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr){
     trav -> alloc = 1;
     trav -> size = requested;
 
-    if(trav -> next_node != NULL){
+    /*if(trav -> next_node != NULL){
         next = newNode;
     }
     else{
         next = head;
-    }
+    }*/
 }
 
 void *mymalloc(size_t requested){
@@ -155,6 +164,9 @@ void *mymalloc(size_t requested){
                 if(trav -> next_node == NULL){
                     trav = head;
                 }
+                else if(trav -> next_node == next){
+                    return NULL;
+                }
                 else{
                     trav = trav -> next_node;
                 }
@@ -172,27 +184,29 @@ void *mymalloc(size_t requested){
                     }
                     return trav -> ptr;
                 }
-                
+
                 insertNewNodeAfter(trav, requested, trav -> ptr);
 
-            }else{
+            }
+            
+            if (trav -> next_node != NULL){
                 next = trav -> next_node;
+            }
+            else{
+                next = head;
             }
 
             //printf("%p\n",next->ptr);
-
-            return trav -> ptr;
     }
+    return trav -> ptr;
 }
 
-memoryList* mergeNodes(memoryList* trav, memoryList* nodeToMerge){
-
+void* mergeNodes(memoryList* trav, memoryList* nodeToMerge){
     memoryList* temp = trav;
 
     trav -> last_node -> size += trav -> size;
-    
-    if(trav == tail){
 
+    if(trav -> next_node == NULL){
         trav -> last_node -> next_node = NULL;
     }
     else{
@@ -200,13 +214,15 @@ memoryList* mergeNodes(memoryList* trav, memoryList* nodeToMerge){
         trav -> next_node -> last_node = trav -> last_node;
     }
 
-    if(next == trav){
-        next = nodeToMerge;
+    if(next == temp){
+        if(temp -> next_node == NULL){
+            next = head;
+        }
+        else{
+            next = nodeToMerge;
+        }
     }
-
     free(temp);
-
-    return trav;
 }
 
 /* Frees a block of memory previously allocated by mymalloc. */
@@ -228,13 +244,15 @@ void myfree(void* node){
         trav = trav -> next_node;
 
     }while(trav != NULL);
-    
+
+    if(!trav){
+        return;
+    }
+
     if(trav->last_node!=NULL){
         if((trav != head) && (trav -> last_node -> alloc == 0)){
             memoryList *firstTemp = trav -> last_node;
-
-            trav = mergeNodes(trav, trav -> last_node);
-
+            mergeNodes(trav, trav -> last_node);
             trav = firstTemp;
         }
     }
@@ -242,7 +260,6 @@ void myfree(void* node){
     if(trav -> next_node != NULL){
         if(trav -> next_node -> alloc == 0){
             memoryList* secondTemp = trav -> next_node;
-            secondTemp = trav -> next_node;
             mergeNodes(secondTemp, trav);
         }
     }
@@ -487,7 +504,6 @@ void try_mymem(int argc, char **argv) {
     e = mymalloc(100);
     myfree(b);
     myfree(d);
-    print_memory();
     myfree(c);
 
 
