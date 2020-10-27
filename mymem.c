@@ -132,6 +132,10 @@ void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr){
 
 void *mymalloc(size_t requested){
 
+    if(mem_largest_free < requested){
+        return NULL;
+    }
+
     assert((int)myStrategy > 0);
 
     memoryList *trav = next;
@@ -203,28 +207,16 @@ memoryList* mergeNodes(memoryList* trav, memoryList* nodeToMerge){
     free(temp);
 
     return trav;
-
-    /*trav -> next_node = nodeToMerge -> next_node;
-    trav -> alloc = 0;
-    trav -> ptr = nodeToMerge -> ptr;
-
-    if(nodeToMerge -> next_node != NULL){
-        nodeToMerge -> next_node -> last_node = trav;
-    }
-
-    if(nodeToMerge == next && nodeToMerge -> next_node != NULL){
-        next = nodeToMerge -> next_node;
-    }else if(nodeToMerge == next && nodeToMerge == tail){
-        next = head;
-    }
-
-    free(nodeToMerge);
-    return trav;*/
 }
 
 /* Frees a block of memory previously allocated by mymalloc. */
 /*  */ 
 void myfree(void* node){
+
+    if(node == NULL){
+        return;
+    }
+
     memoryList *trav = head;
 
     do{
@@ -239,18 +231,19 @@ void myfree(void* node){
     
     if(trav->last_node!=NULL){
         if((trav != head) && (trav -> last_node -> alloc == 0)){
+            memoryList *firstTemp = trav -> last_node;
+
             trav = mergeNodes(trav, trav -> last_node);
 
-            trav = trav -> last_node;
+            trav = firstTemp;
         }
     }
 
-
     if(trav -> next_node != NULL){
         if(trav -> next_node -> alloc == 0){
-        memoryList* secondTemp = trav -> next_node;
-        secondTemp = trav -> next_node;
-        mergeNodes(secondTemp, trav);
+            memoryList* secondTemp = trav -> next_node;
+            secondTemp = trav -> next_node;
+            mergeNodes(secondTemp, trav);
         }
     }
 
@@ -488,18 +481,15 @@ void try_mymem(int argc, char **argv) {
     initmem(strat,500);
 
     a = mymalloc(100);
-    print_memory();
     b = mymalloc(100);
-    print_memory();
     c = mymalloc(100);
-    print_memory();
+    d = mymalloc(100);
+    e = mymalloc(100);
     myfree(b);
+    myfree(d);
     print_memory();
-    d = mymalloc(50);
-    print_memory();
-    myfree(a);
-    print_memory();
-    e = mymalloc(25);
+    myfree(c);
+
 
     print_memory();
     print_memory_status();
