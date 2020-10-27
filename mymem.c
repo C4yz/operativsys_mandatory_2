@@ -53,7 +53,7 @@ void initmem(strategies strategy, size_t sz){
 
     if (myMemory != NULL){
         free(myMemory);
-    }  /* in case this is not the first time initmem2 is called */
+    }
 
     /* TODO: release any other memory you were using for bookkeeping when doing a re-initialization! */
     if(head != NULL){
@@ -67,10 +67,6 @@ void initmem(strategies strategy, size_t sz){
 
         free(trav);
     }
-
-    /*if(next != NULL){
-        free(next);
-    }*/
 
     myMemory = malloc(sz);
 
@@ -99,7 +95,7 @@ void initmem(strategies strategy, size_t sz){
  */
 
 
-/* Inspiration er tager fra geeks for geeks https://www.geeksforgeeks.org/doubly-linked-list/ */
+/* Denne metode indsætter en ny node efter den valgte node.  */
 void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr){
     
     if(trav == NULL){
@@ -109,6 +105,7 @@ void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr){
     /* Her bliver den nye node alloceret i vores hukommelse.  */
     memoryList *newNode = malloc(sizeof(memoryList));
 
+    /* Hvis vores nodes next_node ikke er NULL kan pointerne blive opdeateret */
     if(trav -> next_node != NULL){
         newNode -> next_node = trav -> next_node;
         trav -> next_node -> last_node = newNode;
@@ -116,6 +113,7 @@ void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr){
         newNode -> last_node = trav;
         trav -> next_node = newNode;
     }
+    /* Hvis vores nodes next_node er lig med null er det slutningen af vores liste og pointerne bliver opdateret */
     else{
         trav -> next_node = newNode;
         newNode -> last_node = trav;
@@ -128,25 +126,21 @@ void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr){
     newNode -> alloc = 0;
     newNode -> ptr = travPtr + requested;
 
+    /* Her sætter vi den gamle nodes parametre.  */
     trav -> alloc = 1;
     trav -> size = requested;
-
-    /*if(trav -> next_node != NULL){
-        next = newNode;
-    }
-    else{
-        next = head;
-    }*/
 }
 
 void *mymalloc(size_t requested){
 
+    /* Her sikre vi os at der faktisk er plads til den efterspurgte bit størrelse */
     if(mem_largest_free < requested){
         return NULL;
     }
 
     assert((int)myStrategy > 0);
 
+    /* Her laver vi en midlertidig node som hedder trav og siger den skal starte ved head. */
     memoryList *trav = next;
 
 	switch (myStrategy){
@@ -160,6 +154,8 @@ void *mymalloc(size_t requested){
 	            return NULL;
 	  case Next:
 
+            /* Her finder vi den første node der passer ud fra vores next pointer */
+
             while (trav -> size <= requested && trav -> alloc != 0){
                 if(trav -> next_node == NULL){
                     trav = head;
@@ -172,8 +168,10 @@ void *mymalloc(size_t requested){
                 }
             }
                 
+            /* Når vi så har fundet vores node kigger vi på om størrelsen passer. */    
             if(trav -> size >= requested){
-
+                
+                /* Hvis størrelsen passer præcist skal dens allocering bare sættes til 1. */
                 if(trav -> size == requested){
                     trav -> alloc = 1;
                     if(trav -> next_node == NULL){
@@ -185,10 +183,12 @@ void *mymalloc(size_t requested){
                     return trav -> ptr;
                 }
 
+                /* Vi sætter den nye node ind. */
                 insertNewNodeAfter(trav, requested, trav -> ptr);
 
             }
             
+            /* Her opdatere vi vores next pointer til det næste. Hvis den er ved slutningen bliver det sat til head ellers den næste. */
             if (trav -> next_node != NULL){
                 next = trav -> next_node;
             }
@@ -196,16 +196,18 @@ void *mymalloc(size_t requested){
                 next = head;
             }
 
-            //printf("%p\n",next->ptr);
     }
     return trav -> ptr;
 }
 
+/* Denne metode bruges til at merge 2 nodes sammen hvis de begge har allocering 0. */
 void* mergeNodes(memoryList* trav, memoryList* nodeToMerge){
+    /* Først laver vi en ny node og opdatere størrelsen. */
     memoryList* temp = trav;
 
     trav -> last_node -> size += trav -> size;
 
+    /* Hvis vores nodes next_node er lig med NULL skal vi opdatere på en måde frem for hvis den ikke er.  */
     if(trav -> next_node == NULL){
         trav -> last_node -> next_node = NULL;
     }
@@ -214,6 +216,7 @@ void* mergeNodes(memoryList* trav, memoryList* nodeToMerge){
         trav -> next_node -> last_node = trav -> last_node;
     }
 
+    /* Her opdatere vi next pointeren hvis det er nødvendigt og det var den som skulle slettes. */
     if(next == temp){
         if(temp -> next_node == NULL){
             next = head;
@@ -222,19 +225,23 @@ void* mergeNodes(memoryList* trav, memoryList* nodeToMerge){
             next = nodeToMerge;
         }
     }
+
+    /* Til sidst frigøre vi vores node fra hukommelsen. */
     free(temp);
 }
 
 /* Frees a block of memory previously allocated by mymalloc. */
-/*  */ 
+/* Denne metode bruges til at finde den node som skal frigøres og sætte dens allocering til 0. */ 
 void myfree(void* node){
 
     if(node == NULL){
         return;
     }
 
+    /* Vi begynder fra toppen af listen. */
     memoryList *trav = head;
 
+    /* Går den igennem indtil at vi finder den rigtige node. */
     do{
         if(trav -> ptr == node){
             trav -> alloc = 0;
@@ -249,6 +256,7 @@ void myfree(void* node){
         return;
     }
 
+    /* Her kigger vi på om den node vi arbejder ud fra er head hvis ikke den er det og next_node også har allocering 0 kan de 2 slås sammen. */
     if(trav->last_node!=NULL){
         if((trav != head) && (trav -> last_node -> alloc == 0)){
             memoryList *firstTemp = trav -> last_node;
@@ -257,6 +265,7 @@ void myfree(void* node){
         }
     }
 
+    /* Dette er den samme situation som den forrige men bare for den næste node og om den er den sidste node i listen. */ 
     if(trav -> next_node != NULL){
         if(trav -> next_node -> alloc == 0){
             memoryList* secondTemp = trav -> next_node;
@@ -273,6 +282,9 @@ void myfree(void* node){
  * Note that when refered to "memory" here, it is meant that the
  * memory pool this module manages via initmem/mymalloc/myfree.
  */
+
+/* De følgende metoder er meget beskrevet i opgave beskrivelsen og de er bygget op på den samme måde. De går igennem vores liste og leder efter den rigtige node. Når
+den så har fundet den node bliver det talt op på en eller anden måde. Dette kan være i form af en counter eller bare at ligge størrelsen sammen. */
 
 /* Get the number of contiguous areas of free space in memory. */
 int mem_holes(){
