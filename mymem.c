@@ -100,25 +100,34 @@ void insertNewNodeAfter(memoryList *trav, size_t requested, void *travPtr){
     /* Her bliver den nye node alloceret i vores hukommelse.  */
     memoryList *newNode = malloc(sizeof(memoryList));
 
+    if(trav -> next_node != NULL){
+        newNode -> next_node = trav -> next_node;
+        trav -> next_node -> last_node = newNode;
+
+        newNode -> last_node = trav;
+        trav -> next_node = newNode;
+    }
+    else{
+        trav -> next_node = newNode;
+        newNode -> last_node = trav;
+        newNode -> next_node = NULL;
+        tail = newNode;
+    }
 
     /* Her sætter vi den nye nods parameter */
     newNode -> size = trav -> size - requested;
     newNode -> alloc = 0;
     newNode -> ptr = travPtr + requested;
 
-    /* Her siger jeg at den nye next_node skal pege på den node som den forrige next_node pegede på.  */ 
-    newNode -> next_node = trav -> next_node;
+    trav -> alloc = 1;
+    trav -> size = requested;
 
-    /* Her siger jeg så at den ny node skal pege på den forrige node gennem last node. */
-    newNode -> last_node = trav;
-
-    /* Her siger jeg så at den forriges nodes next_node skal nu pege på den nye node som lige er blevet lavet */ 
-    trav -> next_node = newNode;
-
-    /* Dette if statment sætter vores currentNode/trav til at være lig med den node som vi lavede vores ny node ud fra, så vi kan begynde
-    derfra igen næste gang. */
-
-    next = newNode;
+    if(trav -> next_node != NULL){
+        next = newNode;
+    }
+    else{
+        next = head;
+    }
 }
 
 void *mymalloc(size_t requested){
@@ -138,47 +147,79 @@ void *mymalloc(size_t requested){
 	            return NULL;
 	  case Next:
 
-            do{
+            while (trav -> size <= requested && trav -> alloc != 0){
+                if(trav -> next_node == NULL){
+                    trav = head;
+                }
+                else{
+                    trav = trav -> next_node;
+                }
+            }
+                
+            if(trav -> size >= requested){
 
-                if(trav -> size > requested && trav -> alloc != 1){
-                    insertNewNodeAfter(trav, requested, trav -> ptr);
-                    trav -> size = requested;
+                if(trav -> size == requested){
                     trav -> alloc = 1;
-                    break;  
+                    if(trav -> next_node == NULL){
+                        next = head;
+                    }
+                    else{
+                        next = trav; 
+                    }
+                    return trav -> ptr;
                 }
                 
-                if(trav -> next_node != NULL){
-                    next = trav -> next_node;
-                }else{
-                    tail = trav;
-                    next = head;
-                }
+                insertNewNodeAfter(trav, requested, trav -> ptr);
 
-            }while (trav != NULL);
-                
+            }else{
+                next = trav -> next_node;
+            }
+
+            //printf("%p\n",next->ptr);
+
             return trav -> ptr;
     }
 }
 
-memoryList* mergeNodes(memoryList* lastNode, memoryList* nextNode){
+memoryList* mergeNodes(memoryList* trav, memoryList* nodeToMerge){
 
-    lastNode -> next_node = nextNode -> next_node;
-    lastNode -> size = lastNode -> size + nextNode -> size;
-    lastNode -> alloc = 0;
-    lastNode -> ptr = nextNode -> ptr;
+    memoryList* temp = trav;
 
-    if(nextNode -> next_node != NULL){
-        nextNode -> next_node -> last_node = lastNode;
+    trav -> last_node -> size += trav -> size;
+    
+    if(trav == tail){
+
+        trav -> last_node -> next_node = NULL;
+    }
+    else{
+        trav -> last_node -> next_node = trav -> next_node;
+        trav -> next_node -> last_node = trav -> last_node;
     }
 
-    if(nextNode == next && nextNode -> next_node != NULL){
-        next = nextNode -> next_node;
-    }else if(nextNode == next && nextNode == tail){
+    if(next == trav){
+        next = nodeToMerge;
+    }
+
+    free(temp);
+
+    return trav;
+
+    /*trav -> next_node = nodeToMerge -> next_node;
+    trav -> alloc = 0;
+    trav -> ptr = nodeToMerge -> ptr;
+
+    if(nodeToMerge -> next_node != NULL){
+        nodeToMerge -> next_node -> last_node = trav;
+    }
+
+    if(nodeToMerge == next && nodeToMerge -> next_node != NULL){
+        next = nodeToMerge -> next_node;
+    }else if(nodeToMerge == next && nodeToMerge == tail){
         next = head;
     }
 
-    free(nextNode);
-    return lastNode;
+    free(nodeToMerge);
+    return trav;*/
 }
 
 /* Frees a block of memory previously allocated by mymalloc. */
@@ -196,12 +237,21 @@ void myfree(void* node){
 
     }while(trav != NULL);
     
-    if((trav -> last_node != NULL) && (trav -> last_node -> alloc == 0)){
-        trav = mergeNodes(trav -> last_node, trav);
+    if(trav->last_node!=NULL){
+        if((trav != head) && (trav -> last_node -> alloc == 0)){
+            trav = mergeNodes(trav, trav -> last_node);
+
+            trav = trav -> last_node;
+        }
     }
 
-    if((trav -> next_node != NULL) && (trav -> next_node -> alloc == 0)){
-        mergeNodes(trav, trav -> next_node);
+
+    if(trav -> next_node != NULL){
+        if(trav -> next_node -> alloc == 0){
+        memoryList* secondTemp = trav -> next_node;
+        secondTemp = trav -> next_node;
+        mergeNodes(secondTemp, trav);
+        }
     }
 
     return;
@@ -216,10 +266,12 @@ void myfree(void* node){
 
 /* Get the number of contiguous areas of free space in memory. */
 int mem_holes(){
+
     int freeAlloc = 0;
 
     memoryList *trav = head;
-     
+    
+    
     do{
         if(trav -> alloc == 0){
             freeAlloc++;
@@ -240,7 +292,7 @@ int mem_allocated(){
 
     do{
         if(trav -> alloc == 1){
-            allocated++;
+            allocated += trav -> size;
         }
 
         trav = trav -> next_node;
@@ -310,12 +362,11 @@ char mem_is_alloc(void *ptr){
     do{
         if(trav -> ptr == ptr){
             if(trav -> alloc == 1){
-                return 1;
-            }
-            else{
-                return 0;
+                return trav -> alloc;
             }
         }
+
+        trav = trav -> next_node;
 
     }while(trav != NULL);
     
@@ -390,6 +441,8 @@ strategies strategyFromString(char * strategy){
 void print_memory(){
 	//TODO: Husk at ændre dette kopieret kode!!!
 
+    int i = 0;
+
     printf("Memory List {\n");
     /* Iterate over memory list */
     struct memoryList* trav = head;
@@ -399,6 +452,8 @@ void print_memory(){
             trav->size,
             (trav->alloc ? "[ALLOCATED]" : "[FREE]"));
             trav = trav -> next_node;
+            printf("%i\n",i);
+            i++;
     } while(trav != NULL);
     printf("}\n");
 }

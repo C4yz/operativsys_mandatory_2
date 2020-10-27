@@ -172,6 +172,7 @@ int test_alloc_1(int argc, char **argv) {
 		initmem(strategy,100);
 		for (i = 0; i < 100; i++)
 		{
+
 			void* pointer = mymalloc(1);
 			if ( i > 0 && pointer != (lastPointer+1) )
 			{
@@ -407,8 +408,11 @@ int test_alloc_4(int argc, char **argv) {
 			myfree(mem_pool() + i);
 		}
 
+		//print_memory();
+
 		for (i = 1; i < 100; i+=2)
 		{
+			//printf("%i\n",i);
 			void* pointer = mymalloc(1);
 			if ( i > 1 && pointer != (lastPointer+2) )
 			{
