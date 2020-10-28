@@ -68,6 +68,7 @@ void initmem(strategies strategy, size_t sz){
         free(trav);
     }
 
+    /* Her sætter vi vores head op til at være den første node som bliver lavet. */
     myMemory = malloc(sz);
 
     head = malloc(sizeof(struct memoryList));
@@ -82,8 +83,7 @@ void initmem(strategies strategy, size_t sz){
 
     head -> last_node = NULL;
 
-    /* TODO: Initialize memory management structure. */
-
+    /* Vi sørger for at vøres next node blive sat til head fra begyndelsen af. */
     next = head;
 
 }
@@ -461,22 +461,17 @@ strategies strategyFromString(char * strategy){
 
 /* Use this function to print out the current contents of memory. */
 void print_memory(){
-	//TODO: Husk at ændre dette kopieret kode!!!
-
-    int i = 0;
 
     printf("Memory List {\n");
     /* Iterate over memory list */
-    struct memoryList* trav = head;
-    do {
-        printf("\tNode %p,\tsize %d,\t%s\n",
-            trav->ptr,
-            trav->size,
-            (trav->alloc ? "[ALLOCATED]" : "[FREE]"));
-            trav = trav -> next_node;
-            printf("%i\n",i);
-            i++;
-    } while(trav != NULL);
+    struct memoryList* trav;
+
+    for(trav = head; trav != NULL; trav = trav -> next_node){
+        printf("\tNode %p, \tSize %d, \t%s\n",
+        trav -> ptr,
+        trav -> size,
+        (trav -> alloc ? "[Allocated]" : "[Free]"));
+    }
     printf("}\n");
 }
 
